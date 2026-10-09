@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Model weights and media (large, downloaded or local-only)
+*.pt
+*.onnx
+*.task
+*.engine
+media/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db

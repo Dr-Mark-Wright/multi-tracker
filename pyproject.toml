@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multitracker"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["numpy>=2.0", "opencv-python>=4.10"]
+
+[tool.setuptools.packages.find]
+include = ["multitracker*"]
