@@ -1,2 +1,5 @@
 numpy>=2.0
 opencv-python>=4.10
+ultralytics>=8.4
+# PyTorch must come from the CUDA index (RTX 50-series needs cu128+):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128

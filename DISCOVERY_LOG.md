@@ -43,3 +43,21 @@ Issues hit and resolved, and the reasoning behind decisions. Newest last.
 - **WhatsApp recompressed the clip** (110 MB original → 7.1 MB, 478×850
   H.264, 30 fps, 38 s) because it was sent as a video, not a document.
   Fine for testing; send as *Document* when full resolution matters.
+
+## 2026-10-09 — Milestone 2: YOLO pose end to end
+
+- **PyTorch 2.11.0+cu128 from the PyTorch index, not PyPI.** Confirmed
+  `sm_120` (Blackwell) in `torch.cuda.get_arch_list()` and the RTX 5090
+  visible. `multitracker.device.select_device()` logs a loud warning if
+  CUDA is ever unavailable, so a CPU fallback cannot go unnoticed.
+- **Model: `yolo26s-pose.pt`** (Ultralytics 8.4.174, YOLO26 small, 23 MB,
+  auto-downloaded on first use). On the phone clip: ~5.5 ms median
+  inference (first frame ~11 ms warm-up), so the camera, not the GPU,
+  limits frame rate.
+- **Common output format first.** `TrackerResult` carries detections
+  (box, score, label, keypoints, mask) plus the skeleton edges, so the
+  renderer draws any tracker's output without knowing which one ran.
+- **Seated subject, legs hidden by a table:** leg keypoints fall below the
+  0.5 confidence threshold and are not drawn rather than guessed.
+- **Licence:** Ultralytics is AGPL-3.0. Fine for teaching; Wonderbeam
+  would need an Ultralytics enterprise licence if distributed closed-source.
