@@ -17,6 +17,9 @@ class Detection:
     array of ``x, y, confidence`` in pixels, or ``None``. ``skeleton`` lists
     the keypoint index pairs to join with lines. ``mask`` is a boolean
     ``(H, W)`` array the size of the frame, or ``None``.
+    ``keypoints_3d`` is a ``(K, 3)`` array of ``x, y, z`` in metres (x right,
+    y down, z away from the camera), matching ``keypoints`` point for
+    point, or ``None`` for 2D-only trackers.
     """
 
     box: tuple[float, float, float, float] | None = None
@@ -25,6 +28,7 @@ class Detection:
     keypoints: np.ndarray | None = None
     skeleton: tuple[Edge, ...] = ()
     mask: np.ndarray | None = None
+    keypoints_3d: np.ndarray | None = None
 
 
 @dataclass

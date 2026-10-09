@@ -30,7 +30,7 @@ VideoSource ──frame──▶ TrackerSwitcher ──TrackerResult──▶ re
                         ├─ YOLO pose
                         ├─ MediaPipe (hands + face)
                         ├─ YOLOE-26 (live text prompts)
-                        └─ BodyPose3D (planned)
+                        └─ BodyPose3D (MediaPipe 3D; MotionBERT planned)
 ```
 
 The UI sends "switch to X" events and reads back frames with overlays. It
@@ -46,7 +46,7 @@ never knows which source or tracker is active.
 | Open-vocabulary model size | `yoloe-26l-seg` | Decided | Small model missed coasters entirely; large found 96% at ~10 ms |
 | Hands + face | MediaPipe Tasks 1.1 (CPU) | Decided | Matches Wonderbeam's stack; CPU-only on Windows |
 | UI toolkit | PySide6 (Qt) proposed | **Open** | Threaded capture loop, native widgets; web UIs add latency |
-| BodyPose3D | MotionBERT lifter on YOLO pose proposed | **Open** | Reuses 2D pose, GPU, clear teaching story; SMPL-based models have licence limits |
+| BodyPose3D | MediaPipe Pose 3D landmarks first, MotionBERT lifter later | Decided (2026-10-09) | MediaPipe is live straight away with no new dependencies; MotionBERT's long two-sided frame window adds delay, so it comes second as a higher-quality option and a teaching comparison |
 | Open-vocabulary default | YOLOE-26 over YOLO-World | **Provisional** | Behind the tracker interface, so cheap to change |
 | Licensing | Ultralytics is AGPL-3.0 | Noted | Fine for teaching; closed Wonderbeam use needs an enterprise licence |
 
@@ -57,8 +57,9 @@ never knows which source or tracker is active.
 | 1 | Capture layer with runtime source switching | Done 2026-10-09 | `2ddff82` |
 | 2 | One tracker end to end (YOLO pose + overlays) | Done 2026-10-09 | `7fe4fe5` |
 | 3 | Tracker-switching interface + MediaPipe | Done 2026-10-09 | `002a02e` |
-| 4 | YOLOE-26 with live text prompts | Done 2026-10-09 | this commit |
-| 5 | BodyPose3D | Next (model choice open) | |
+| 4 | YOLOE-26 with live text prompts | Done 2026-10-09 | `f5bfb41` |
+| 5a | BodyPose3D: MediaPipe 3D landmarks + 3D views | Done 2026-10-09 | this commit |
+| 5b | BodyPose3D: MotionBERT lifter on YOLO pose | Next | |
 | 6 | Proper UI (source, tracker, prompt controls) | Planned | |
 | 7 | Live-demo hardening (dropped streams, missing webcam) | Planned | |
 
@@ -71,6 +72,9 @@ never knows which source or tracker is active.
 | MediaPipe face (2 tiles) | ~5.5 ms | ~180 fps | CPU |
 | MediaPipe hands + face | ~13 ms | ~75 fps | CPU |
 | YOLOE-26 large (3 prompts) | ~10 ms | ~100 fps | GPU |
+| BodyPose3D, MediaPipe lite | ~11 ms | ~90 fps | CPU |
+| BodyPose3D, MediaPipe full (default) | ~13 ms | ~80 fps | CPU |
+| BodyPose3D, MediaPipe heavy | ~27 ms | ~37 fps | CPU |
 
 ## Future ideas
 

@@ -26,4 +26,10 @@ py -3.12 -m venv .venv
 .venv\Scripts\python scripts\track_preview.py "media\your-clip.mp4"
 ```
 
+Press `t` to cycle trackers, or start on one, e.g. 3D body pose:
+
+```powershell
+.venv\Scripts\python scripts	rack_preview.py 0 --tracker BodyPose3D
+```
+
 See `DISCOVERY_LOG.md` for decisions and issues resolved along the way.

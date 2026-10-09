@@ -129,3 +129,36 @@ Issues hit and resolved, and the reasoning behind decisions. Newest last.
   more descriptive prompt ("round coaster") beats the bare noun.
 - **Laptops:** use `model="yoloe-26s-seg.pt"` for speed, but expect much
   weaker recall on unusual objects.
+
+## 2026-10-09 — Milestone 5a: BodyPose3D with MediaPipe
+
+- **Model choice:** MediaPipe Pose Landmarker first, MotionBERT later.
+  MediaPipe returns 3D "world" landmarks (33 points, metres, centred
+  between the hips) directly, so it works live with no new dependencies.
+  MotionBERT is trained on long clips and looks at frames on both sides
+  of the current one, so live use costs delay or quality.
+- **`keypoints_3d` added to `Detection`**, matching `keypoints` point for
+  point. 2D-only trackers leave it `None`, so nothing else changed.
+- **3D views in the overlay:** when any detection has 3D points, the
+  renderer draws front and side views in the bottom-right corner. The
+  side view shows depth, which the 2D overlay cannot. Still no
+  tracker-specific code in the renderer.
+- **Results on the phone clip (1153 frames, seated subject, legs hidden
+  by a table):**
+
+  | Variant | Frames with a body | Per frame (CPU) |
+  |---|---|---|
+  | lite | 99% | ~11 ms |
+  | full (default) | 97% | ~13 ms |
+  | heavy | 100% | ~27 ms |
+
+  Hidden legs get low visibility scores and are left out of both the
+  2D overlay and the 3D views.
+- **Issue: model downloads cut off at about 4 MB.** The full (9.4 MB) and
+  heavy (30.7 MB) pose models failed every time, while `curl` fetched
+  them fine. Cause: this PC's internet goes through a phone hotspot,
+  which drops long Python downloads. Plain retries failed at the same
+  point, so `ensure_model` now resumes `.part` files with an HTTP Range
+  request. Both models then completed in two attempts, byte-identical to
+  the `curl` copy. Also useful on venue or student Wi-Fi.
+

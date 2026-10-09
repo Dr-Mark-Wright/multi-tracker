@@ -78,6 +78,58 @@ def draw_mask(frame: np.ndarray, mask: np.ndarray) -> None:
     frame[mask] = (frame[mask] * 0.5 + MASK_COLOUR * 0.5).astype(np.uint8)
 
 
+INSET_HALF_METRES = 0.9  # each 3D view shows +-0.9 m around the hips
+INSET_BACKGROUND = (40, 30, 20)
+
+
+def _draw_view(canvas: np.ndarray, detections: list[Detection],
+               axes: tuple[int, int], left: int, top: int, size: int,
+               title: str) -> None:
+    """One orthographic view of the 3D skeletons, drawn into a square."""
+    panel = canvas[top:top + size, left:left + size]
+    panel[:] = (panel * 0.3 + np.array(INSET_BACKGROUND) * 0.7).astype(np.uint8)
+    scale = size / (2 * INSET_HALF_METRES)
+    centre = size / 2
+    for detection in detections:
+        world = detection.keypoints_3d
+        visible = (detection.keypoints[:, 2] >= KEYPOINT_MIN_CONFIDENCE
+                   if detection.keypoints is not None
+                   else np.ones(len(world), bool))
+        points = [(int(left + centre + p[axes[0]] * scale),
+                   int(top + centre + p[axes[1]] * scale)) for p in world]
+        for start, end in detection.skeleton:
+            if visible[start] and visible[end]:
+                cv2.line(canvas, points[start], points[end], BONE_COLOUR, 2,
+                         cv2.LINE_AA)
+        for point, seen in zip(points, visible):
+            if seen:
+                cv2.circle(canvas, point, 3, JOINT_COLOUR, -1, cv2.LINE_AA)
+    cv2.rectangle(canvas, (left, top), (left + size - 1, top + size - 1),
+                  TEXT_COLOUR, 1)
+    cv2.putText(canvas, title, (left + 6, top + 18), cv2.FONT_HERSHEY_SIMPLEX,
+                0.5, TEXT_COLOUR, 1, cv2.LINE_AA)
+
+
+def draw_3d_inset(canvas: np.ndarray, detections: list[Detection]) -> None:
+    """Front and side views of 3D skeletons in the bottom-right corner.
+
+    The side view shows depth (z), which the 2D overlay cannot.
+    """
+    height, width = canvas.shape[:2]
+    size = min(height, width) // 3
+    if size < 60:
+        return
+    top = height - size - 10
+    side_left = width - size - 10
+    front_left = side_left - size - 6
+    if front_left < 0:
+        front_left, side_left = None, width - size - 10
+    if front_left is not None:
+        _draw_view(canvas, detections, (0, 1), front_left, top, size, "front")
+    # Side view: depth runs left to right, camera on the left.
+    _draw_view(canvas, detections, (2, 1), side_left, top, size, "side")
+
+
 def draw_result(frame: np.ndarray, result: TrackerResult) -> np.ndarray:
     """Draw every detection in ``result`` onto a copy of ``frame``."""
     canvas = frame.copy()
@@ -87,6 +139,9 @@ def draw_result(frame: np.ndarray, result: TrackerResult) -> np.ndarray:
         draw_box(canvas, detection)
         if detection.keypoints is not None:
             draw_keypoints(canvas, detection)
+    bodies_3d = [d for d in result.detections if d.keypoints_3d is not None]
+    if bodies_3d:
+        draw_3d_inset(canvas, bodies_3d)
     return canvas
 
 

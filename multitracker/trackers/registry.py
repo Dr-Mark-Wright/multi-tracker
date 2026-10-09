@@ -30,10 +30,16 @@ def _yoloe() -> Tracker:
     return YoloeTracker()
 
 
+def _body_pose_3d() -> Tracker:
+    from multitracker.trackers.body_pose_3d import BodyPose3DTracker
+    return BodyPose3DTracker()
+
+
 TRACKERS: dict[str, Callable[[], Tracker]] = {
     "YOLOE-26": _yoloe,
     "YOLO pose": _yolo_pose,
     "MediaPipe": _mediapipe,
+    "BodyPose3D": _body_pose_3d,
 }
 
 
