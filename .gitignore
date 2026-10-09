@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+*.egg-info/
 
 # Model weights and media (large, downloaded or local-only)
 *.pt
