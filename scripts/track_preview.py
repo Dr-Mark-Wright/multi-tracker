@@ -4,7 +4,7 @@ Example::
 
     python scripts/track_preview.py "media/clip.mp4"
 
-Keys: q or Esc quits. Files loop when they end.
+Keys: t cycles trackers, q or Esc quits. Files loop when they end.
 """
 
 import argparse
@@ -16,10 +16,11 @@ import numpy as np
 
 from multitracker.capture import SourceSpec, VideoSource
 from multitracker.render import draw_hud, draw_result
-from multitracker.trackers.yolo_pose import YoloPoseTracker
+from multitracker.trackers.registry import TrackerSwitcher
 
 WINDOW = "Multi-Tracker"
 QUIT_KEYS = {ord("q"), 27}
+CYCLE_KEY = ord("t")
 
 
 class FrameRateMeter:
@@ -52,8 +53,23 @@ def window_closed(key: int) -> bool:
         WINDOW, cv2.WND_PROP_VISIBLE)
 
 
-def run(source_text: str) -> None:
-    tracker = YoloPoseTracker()
+def cycle_tracker(switcher: TrackerSwitcher) -> None:
+    names = switcher.names
+    current = names.index(switcher.active_name)
+    switcher.switch(names[(current + 1) % len(names)])
+
+
+def hud_lines(switcher: TrackerSwitcher, detections: int, inference_ms: float,
+              fps: float) -> list[str]:
+    return [
+        f"{switcher.active_name}  detections: {detections}  (t: switch)",
+        f"inference {inference_ms:.1f} ms  display {fps:.0f} fps",
+    ]
+
+
+def run(source_text: str, tracker_name: str) -> None:
+    switcher = TrackerSwitcher()
+    switcher.switch(tracker_name)
     meter = FrameRateMeter()
     with VideoSource() as source:
         source.open(SourceSpec.parse(source_text))
@@ -62,17 +78,17 @@ def run(source_text: str) -> None:
             frame = next_frame(source)
             if frame is None:
                 break
-            result = tracker.process(frame)
+            result = switcher.process(frame)
             canvas = draw_result(frame, result)
-            draw_hud(canvas, [
-                f"{tracker.name}  people: {len(result.detections)}",
-                f"inference {result.inference_ms:.1f} ms  "
-                f"display {meter.tick():.0f} fps",
-            ])
+            draw_hud(canvas, hud_lines(switcher, len(result.detections),
+                                       result.inference_ms, meter.tick()))
             cv2.imshow(WINDOW, canvas)
-            if window_closed(cv2.waitKey(delay_ms) & 0xFF):
+            key = cv2.waitKey(delay_ms) & 0xFF
+            if window_closed(key):
                 break
-    tracker.close()
+            if key == CYCLE_KEY:
+                cycle_tracker(switcher)
+    switcher.close()
     cv2.destroyAllWindows()
 
 
@@ -80,7 +96,10 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", help="webcam index, file path or stream URL")
-    run(parser.parse_args().source)
+    parser.add_argument("--tracker", default="YOLO pose",
+                        choices=TrackerSwitcher().names)
+    args = parser.parse_args()
+    run(args.source, args.tracker)
 
 
 if __name__ == "__main__":

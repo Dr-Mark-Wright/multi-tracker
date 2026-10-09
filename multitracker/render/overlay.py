@@ -62,7 +62,7 @@ def draw_result(frame: np.ndarray, result: TrackerResult) -> np.ndarray:
             draw_mask(canvas, detection.mask)
         draw_box(canvas, detection)
         if detection.keypoints is not None:
-            draw_keypoints(canvas, detection.keypoints, result.skeleton)
+            draw_keypoints(canvas, detection.keypoints, detection.skeleton)
     return canvas
 
 

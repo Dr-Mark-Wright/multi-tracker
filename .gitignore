@@ -10,6 +10,7 @@ __pycache__/
 *.task
 *.engine
 media/
+models/
 
 # Editors / OS
 .vscode/

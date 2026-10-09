@@ -61,3 +61,36 @@ Issues hit and resolved, and the reasoning behind decisions. Newest last.
   0.5 confidence threshold and are not drawn rather than guessed.
 - **Licence:** Ultralytics is AGPL-3.0. Fine for teaching; Wonderbeam
   would need an Ultralytics enterprise licence if distributed closed-source.
+
+## 2026-10-09 — Milestone 3: tracker switching + MediaPipe
+
+- **Issue: `pip install mediapipe` failed with "Access is denied" on
+  `cv2.pyd`.** A running preview window held the DLL open. Close any
+  running app before installing packages.
+- **Issue: two OpenCV packages fight over `cv2/`.** MediaPipe depends on
+  `opencv-contrib-python`, Ultralytics on `opencv-python`; both install
+  the same folder and uninstalling either breaks the other. Fix: keep both
+  on the same version (5.0.0.93) and force-reinstall contrib last, since
+  it is a superset. `pip check` is clean.
+- **MediaPipe 1.1 has no legacy `mp.solutions`** and ships no model files.
+  Uses the Tasks API; `.task` models download on first use into `models/`.
+- **Skeleton edges moved from `TrackerResult` to each `Detection`.** One
+  MediaPipe frame holds hands (21 points) and a face (478 points), which
+  need different edges.
+- **Lazy tracker imports in `registry.py`.** Choosing YOLO pose never
+  imports MediaPipe and vice versa, so modules stay liftable.
+- **VIDEO mode needs strictly increasing timestamps**, including across
+  file loops and tracker switches. Uses a monotonic clock, bumped by 1 ms
+  if two frames land in the same millisecond.
+- **Issue: hand labels were swapped.** MediaPipe's docs say handedness
+  assumes a mirrored (selfie) image, so the first version swapped labels.
+  On real footage that was wrong: with mediapipe 1.1 on unmirrored OpenCV
+  frames the raw labels already match the subject's own hands. Swap
+  removed; verified on a frame with the subject facing the camera.
+- **Issue: face found in 8 of 1153 frames.** Not a confidence problem
+  (0.5 vs 0.2 made no difference). The face detector squeezes the whole
+  frame into a small square, so a ~50 px face in a portrait 478×850 frame
+  vanishes. Fix: run the face landmarker on overlapping square tiles
+  (2 tiles for this clip) in IMAGE mode and drop duplicates. Result: 743
+  of 1153 frames (64%); most misses are the subject looking down. Decided
+  with Mark that body and hands matter more, so this is good enough.

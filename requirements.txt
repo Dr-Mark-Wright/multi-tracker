@@ -1,5 +1,10 @@
 numpy>=2.0
-opencv-python>=4.10
 ultralytics>=8.4
+mediapipe>=1.1
+# MediaPipe pulls in opencv-contrib-python, Ultralytics pulls in
+# opencv-python; both write the same cv2 folder. Keep them on the same
+# version and install contrib last (it is a superset):
+#   pip install --force-reinstall --no-deps opencv-contrib-python==5.0.0.93
+opencv-contrib-python==5.0.0.93
 # PyTorch must come from the CUDA index (RTX 50-series needs cu128+):
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128

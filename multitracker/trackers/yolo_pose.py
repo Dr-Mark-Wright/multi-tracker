@@ -38,7 +38,7 @@ def _to_detections(prediction) -> list[Detection]:
     keypoints = prediction.keypoints.data.cpu().numpy()
     return [
         Detection(box=tuple(box), score=float(score), label="person",
-                  keypoints=points)
+                  keypoints=points, skeleton=COCO_SKELETON)
         for box, score, points in zip(boxes, scores, keypoints)
     ]
 
@@ -60,7 +60,6 @@ class YoloPoseTracker:
         )[0]
         return TrackerResult(
             detections=_to_detections(prediction),
-            skeleton=COCO_SKELETON,
             inference_ms=float(prediction.speed["inference"]),
         )
 
