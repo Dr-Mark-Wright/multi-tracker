@@ -35,18 +35,42 @@ def _visible(point: np.ndarray) -> bool:
     return point[2] >= KEYPOINT_MIN_CONFIDENCE
 
 
-def draw_keypoints(frame: np.ndarray, keypoints: np.ndarray,
-                   skeleton: tuple[Edge, ...]) -> None:
-    width = _line_width(frame)
-    for start, end in skeleton:
+def _joint_radius(frame: np.ndarray, detection: Detection) -> int:
+    """Size joints by how densely packed the keypoints are.
+
+    A body (17 points in a large box) gets big joints, a hand small ones,
+    and a face (478 points in a small box) radius 0, meaning single-pixel
+    dots. No tracker-specific knowledge needed.
+    """
+    largest = _line_width(frame) + 2
+    if detection.box is None:
+        return largest
+    x1, y1, x2, y2 = detection.box
+    area_per_point = (x2 - x1) * (y2 - y1) / len(detection.keypoints)
+    return int(np.clip(np.sqrt(area_per_point) / 5, 0, largest))
+
+
+def _draw_joint(frame: np.ndarray, point: np.ndarray, radius: int) -> None:
+    x, y = int(point[0]), int(point[1])
+    if radius == 0:
+        if 0 <= y < frame.shape[0] and 0 <= x < frame.shape[1]:
+            frame[y, x] = JOINT_COLOUR
+        return
+    cv2.circle(frame, (x, y), radius, JOINT_COLOUR, -1, cv2.LINE_AA)
+
+
+def draw_keypoints(frame: np.ndarray, detection: Detection) -> None:
+    keypoints = detection.keypoints
+    radius = _joint_radius(frame, detection)
+    thickness = max(1, radius - 1)
+    for start, end in detection.skeleton:
         a, b = keypoints[start], keypoints[end]
         if _visible(a) and _visible(b):
             cv2.line(frame, (int(a[0]), int(a[1])), (int(b[0]), int(b[1])),
-                     BONE_COLOUR, width + 1, cv2.LINE_AA)
+                     BONE_COLOUR, thickness, cv2.LINE_AA)
     for point in keypoints:
         if _visible(point):
-            cv2.circle(frame, (int(point[0]), int(point[1])), width + 2,
-                       JOINT_COLOUR, -1, cv2.LINE_AA)
+            _draw_joint(frame, point, radius)
 
 
 def draw_mask(frame: np.ndarray, mask: np.ndarray) -> None:
@@ -62,7 +86,7 @@ def draw_result(frame: np.ndarray, result: TrackerResult) -> np.ndarray:
             draw_mask(canvas, detection.mask)
         draw_box(canvas, detection)
         if detection.keypoints is not None:
-            draw_keypoints(canvas, detection.keypoints, detection.skeleton)
+            draw_keypoints(canvas, detection)
     return canvas
 
 
