@@ -1,6 +1,6 @@
 """The interface every tracker module implements."""
 
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 import numpy as np
 
@@ -16,4 +16,14 @@ class Tracker(Protocol):
         ...
 
     def close(self) -> None:
+        ...
+
+
+@runtime_checkable
+class PromptableTracker(Tracker, Protocol):
+    """A tracker whose classes are chosen by live text prompts."""
+
+    prompts: list[str]
+
+    def set_prompts(self, prompts: list[str]) -> None:
         ...

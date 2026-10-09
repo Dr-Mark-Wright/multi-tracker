@@ -11,7 +11,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from multitracker.trackers.base import Tracker
+from multitracker.trackers.base import PromptableTracker, Tracker
 from multitracker.trackers.types import TrackerResult
 
 
@@ -25,7 +25,13 @@ def _mediapipe() -> Tracker:
     return MediaPipeTracker()
 
 
+def _yoloe() -> Tracker:
+    from multitracker.trackers.yoloe import YoloeTracker
+    return YoloeTracker()
+
+
 TRACKERS: dict[str, Callable[[], Tracker]] = {
+    "YOLOE-26": _yoloe,
     "YOLO pose": _yolo_pose,
     "MediaPipe": _mediapipe,
 }
@@ -44,6 +50,7 @@ class TrackerSwitcher:
         self._factories = factories
         self._loaded: dict[str, Tracker] = {}
         self._active: Tracker | None = None
+        self._prompts: list[str] = []
         self._lock = threading.Lock()
 
     @property
@@ -59,10 +66,27 @@ class TrackerSwitcher:
             self._loaded[name] = self._factories[name]()
         return self._loaded[name]
 
+    @property
+    def prompts(self) -> list[str]:
+        """Prompts of the active tracker, or [] if it takes none."""
+        tracker = self._active
+        if isinstance(tracker, PromptableTracker):
+            return tracker.prompts
+        return []
+
     def switch(self, name: str) -> None:
         tracker = self._load(name)
+        if self._prompts and isinstance(tracker, PromptableTracker):
+            tracker.set_prompts(self._prompts)
         with self._lock:
             self._active = tracker
+
+    def set_prompts(self, prompts: list[str]) -> None:
+        """Remember prompts and pass them to every promptable tracker."""
+        self._prompts = list(prompts)
+        for tracker in list(self._loaded.values()):
+            if isinstance(tracker, PromptableTracker):
+                tracker.set_prompts(self._prompts)
 
     def process(self, frame: np.ndarray) -> TrackerResult:
         with self._lock:

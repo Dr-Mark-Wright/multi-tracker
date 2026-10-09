@@ -5,10 +5,13 @@ Example::
     python scripts/track_preview.py "media/clip.mp4"
 
 Keys: t cycles trackers, q or Esc quits. Files loop when they end.
+Type comma-separated prompts in the console and press Enter to change
+YOLOE-26 classes live, e.g. ``bottle, cup, round coaster``.
 """
 
 import argparse
 import logging
+import threading
 import time
 
 import cv2
@@ -61,15 +64,36 @@ def cycle_tracker(switcher: TrackerSwitcher) -> None:
 
 def hud_lines(switcher: TrackerSwitcher, detections: int, inference_ms: float,
               fps: float) -> list[str]:
-    return [
+    lines = [
         f"{switcher.active_name}  detections: {detections}  (t: switch)",
         f"inference {inference_ms:.1f} ms  display {fps:.0f} fps",
     ]
+    if switcher.prompts:
+        lines.append("prompts: " + ", ".join(switcher.prompts))
+    return lines
 
 
-def run(source_text: str, tracker_name: str) -> None:
+def read_prompts_forever(switcher: TrackerSwitcher) -> None:
+    """Console thread: each line typed becomes the new prompt list."""
+    while True:
+        try:
+            line = input()
+        except EOFError:
+            return
+        switcher.set_prompts(line.split(","))
+
+
+def start_prompt_reader(switcher: TrackerSwitcher) -> None:
+    print("Type prompts, comma-separated, then Enter (e.g. 'bottle, cup'):")
+    threading.Thread(target=read_prompts_forever, args=(switcher,),
+                     daemon=True).start()
+
+
+def run(source_text: str, tracker_name: str, prompts: list[str]) -> None:
     switcher = TrackerSwitcher()
+    switcher.set_prompts(prompts)
     switcher.switch(tracker_name)
+    start_prompt_reader(switcher)
     meter = FrameRateMeter()
     with VideoSource() as source:
         source.open(SourceSpec.parse(source_text))
@@ -98,8 +122,10 @@ def main() -> None:
     parser.add_argument("source", help="webcam index, file path or stream URL")
     parser.add_argument("--tracker", default="YOLO pose",
                         choices=TrackerSwitcher().names)
+    parser.add_argument("--prompts", default="person",
+                        help="comma-separated YOLOE-26 classes")
     args = parser.parse_args()
-    run(args.source, args.tracker)
+    run(args.source, args.tracker, args.prompts.split(","))
 
 
 if __name__ == "__main__":

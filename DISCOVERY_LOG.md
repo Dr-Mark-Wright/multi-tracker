@@ -94,3 +94,38 @@ Issues hit and resolved, and the reasoning behind decisions. Newest last.
   (2 tiles for this clip) in IMAGE mode and drop duplicates. Result: 743
   of 1153 frames (64%); most misses are the subject looking down. Decided
   with Mark that body and hands matter more, so this is good enough.
+- **Overlay points sized by keypoint density** (area per point in the
+  box), so a 478-point face draws as 1 px dots and a 17-point body as
+  large joints, without the renderer knowing which tracker ran.
+
+## 2026-10-09 — Milestone 4: YOLOE-26 with live prompts
+
+- **Issue: first YOLOE run crashed with `No module named 'clip'`.** Text
+  prompts need Ultralytics' CLIP fork from GitHub. Ultralytics tried to
+  pip-install it mid-run and failed because git was not on this shell's
+  PATH (installed after the shell started). Installed it explicitly, and
+  set `YOLO_AUTOINSTALL=False` in the YOLOE module so Ultralytics can
+  never pip-install during a live demo.
+- **Prompt changes are queued, applied before the next frame.**
+  `set_prompts()` can be called from any thread; the capture loop applies
+  it, so the model is never modified mid-inference. First change takes
+  ~0.4 s (text encoder warm-up).
+- **Issue: coasters barely detected** (3 of 1153 frames; Mark saw the same
+  on a laptop). Not a threshold problem: the small model's coaster scores
+  sit below 0.25. Tested 12 prompt wordings × model sizes on 116 frames:
+
+  | Prompt | small | large |
+  |---|---|---|
+  | coaster | 0% | 84% |
+  | round coaster | 22% | 95% |
+  | cork coaster | 46% | 63% |
+  | disc | 22% | 51% |
+
+  Full clip, bottle + cup + coaster prompts together, coaster boxes found
+  (2 visible coasters per frame): small ~0%, medium 7%, large 43%,
+  x-large 55%. With **"round coaster"**: large **96%**, x-large 66%, and
+  x-large mislabelled the bottle as a cup. **Chose `yoloe-26l-seg`**
+  (~10 ms/frame on the 5090). Teaching point: wording matters, and a
+  more descriptive prompt ("round coaster") beats the bare noun.
+- **Laptops:** use `model="yoloe-26s-seg.pt"` for speed, but expect much
+  weaker recall on unusual objects.

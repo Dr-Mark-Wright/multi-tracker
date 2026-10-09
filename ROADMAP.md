@@ -29,7 +29,7 @@ VideoSource ──frame──▶ TrackerSwitcher ──TrackerResult──▶ re
  (capture/)            (trackers/registry.py)              (render/)
                         ├─ YOLO pose
                         ├─ MediaPipe (hands + face)
-                        ├─ YOLOE-26   (planned)
+                        ├─ YOLOE-26 (live text prompts)
                         └─ BodyPose3D (planned)
 ```
 
@@ -43,6 +43,7 @@ never knows which source or tracker is active.
 | Environment | Python 3.12 + `venv` (no conda) | Decided | MediaPipe and PyTorch CUDA wheels support 3.12; all packages are pip-distributed |
 | GPU | PyTorch cu128 build, loud CPU-fallback warning | Decided | RTX 5090 (Blackwell, sm_120) needs CUDA 12.8+ |
 | Pose model | `yolo26s-pose` | Decided | ~5.5 ms/frame on the 5090 |
+| Open-vocabulary model size | `yoloe-26l-seg` | Decided | Small model missed coasters entirely; large found 96% at ~10 ms |
 | Hands + face | MediaPipe Tasks 1.1 (CPU) | Decided | Matches Wonderbeam's stack; CPU-only on Windows |
 | UI toolkit | PySide6 (Qt) proposed | **Open** | Threaded capture loop, native widgets; web UIs add latency |
 | BodyPose3D | MotionBERT lifter on YOLO pose proposed | **Open** | Reuses 2D pose, GPU, clear teaching story; SMPL-based models have licence limits |
@@ -55,9 +56,9 @@ never knows which source or tracker is active.
 |---|---|---|---|
 | 1 | Capture layer with runtime source switching | Done 2026-10-09 | `2ddff82` |
 | 2 | One tracker end to end (YOLO pose + overlays) | Done 2026-10-09 | `7fe4fe5` |
-| 3 | Tracker-switching interface + MediaPipe | Done 2026-10-09 | this commit |
-| 4 | YOLOE-26 with live text prompts | Next | |
-| 5 | BodyPose3D | Planned | |
+| 3 | Tracker-switching interface + MediaPipe | Done 2026-10-09 | `002a02e` |
+| 4 | YOLOE-26 with live text prompts | Done 2026-10-09 | this commit |
+| 5 | BodyPose3D | Next (model choice open) | |
 | 6 | Proper UI (source, tracker, prompt controls) | Planned | |
 | 7 | Live-demo hardening (dropped streams, missing webcam) | Planned | |
 
@@ -69,6 +70,7 @@ never knows which source or tracker is active.
 | MediaPipe hands | ~7.8 ms | ~130 fps | CPU |
 | MediaPipe face (2 tiles) | ~5.5 ms | ~180 fps | CPU |
 | MediaPipe hands + face | ~13 ms | ~75 fps | CPU |
+| YOLOE-26 large (3 prompts) | ~10 ms | ~100 fps | GPU |
 
 ## Future ideas
 
