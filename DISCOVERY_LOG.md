@@ -34,3 +34,12 @@ Issues hit and resolved, and the reasoning behind decisions. Newest last.
 - **Verified (OpenCV 5.0.0):** file → file → missing file → dead stream →
   webcam 0 (no camera attached) → file all handled in one process. Failed
   opens raise `OSError` and leave the previous source intact.
+
+## 2026-10-09 — First real test clip (phone, via WhatsApp)
+
+- **Portrait phone video works with no special handling.** OpenCV 5
+  applies rotation metadata automatically (`CAP_PROP_ORIENTATION_AUTO` is
+  on by default); frames arrive 478×850, upright.
+- **WhatsApp recompressed the clip** (110 MB original → 7.1 MB, 478×850
+  H.264, 30 fps, 38 s) because it was sent as a video, not a document.
+  Fine for testing; send as *Document* when full resolution matters.
