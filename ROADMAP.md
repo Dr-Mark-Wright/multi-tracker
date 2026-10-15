@@ -62,6 +62,25 @@ never knows which source or tracker is active.
 | 5b | BodyPose3D: MotionBERT lifter on YOLO pose | Next | |
 | 6 | PySide6 UI (source, tracker, prompt controls, 3D panel) | Done 2026-10-15 | this commit |
 | 7 | Live-demo hardening (dropped streams, missing webcam) | Planned | |
+| 8 | Browser viewer: watch and control from any device on the network | Planned | |
+
+## Milestone 8: browser viewer
+
+Students watch the live tracked video on their own laptops or phones,
+with nothing installed. The PySide6 window stays the main app on the
+demo PC.
+
+- **What it adds:** a small web server inside the app that streams the
+  frames with overlays (MJPEG first; WebRTC only if the delay is too
+  long) and serves a page with the source, tracker and prompt controls.
+- **Same network:** viewers open `http://<demo-pc>:8080`.
+- **Any network:** over Tailscale, or a Cloudflare Tunnel with a login.
+  The port is never opened to the internet without protection.
+- **Expected delay:** a few hundred milliseconds. Fine for watching, but
+  the PC itself remains the place to judge frame rate.
+- **Open questions:** whether viewers can change trackers or only watch
+  (probably only the presenter, behind a passcode), and how many viewers
+  one demo PC can serve at full frame rate.
 
 ## Measured performance (RTX 5090, Ryzen 9 9950X3D, 478×850 phone clip)
 
