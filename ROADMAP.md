@@ -45,7 +45,7 @@ never knows which source or tracker is active.
 | Pose model | `yolo26s-pose` | Decided | ~5.5 ms/frame on the 5090 |
 | Open-vocabulary model size | `yoloe-26l-seg` | Decided | Small model missed coasters entirely; large found 96% at ~10 ms |
 | Hands + face | MediaPipe Tasks 1.1 (CPU) | Decided | Matches Wonderbeam's stack; CPU-only on Windows |
-| UI toolkit | PySide6 (Qt) proposed | **Open** | Threaded capture loop, native widgets; web UIs add latency |
+| UI toolkit | PySide6 (Qt) + pyqtgraph for the 3D view | Decided (2026-10-15) | Native widgets and docking panels, threaded capture loop, rotatable 3D view; web UIs add latency. Remote viewing would need a web stream later |
 | BodyPose3D | MediaPipe Pose 3D landmarks first, MotionBERT lifter later | Decided (2026-10-09) | MediaPipe is live straight away with no new dependencies; MotionBERT's long two-sided frame window adds delay, so it comes second as a higher-quality option and a teaching comparison |
 | Open-vocabulary default | YOLOE-26 over YOLO-World | **Provisional** | Behind the tracker interface, so cheap to change |
 | Licensing | Ultralytics is AGPL-3.0 | Noted | Fine for teaching; closed Wonderbeam use needs an enterprise licence |
@@ -58,9 +58,9 @@ never knows which source or tracker is active.
 | 2 | One tracker end to end (YOLO pose + overlays) | Done 2026-10-09 | `7fe4fe5` |
 | 3 | Tracker-switching interface + MediaPipe | Done 2026-10-09 | `002a02e` |
 | 4 | YOLOE-26 with live text prompts | Done 2026-10-09 | `f5bfb41` |
-| 5a | BodyPose3D: MediaPipe 3D landmarks + 3D views | Done 2026-10-09 | this commit |
+| 5a | BodyPose3D: MediaPipe 3D landmarks + 3D views | Done 2026-10-09 | `4fda1b3` |
 | 5b | BodyPose3D: MotionBERT lifter on YOLO pose | Next | |
-| 6 | Proper UI (source, tracker, prompt controls) | Planned | |
+| 6 | PySide6 UI (source, tracker, prompt controls, 3D panel) | Done 2026-10-15 | this commit |
 | 7 | Live-demo hardening (dropped streams, missing webcam) | Planned | |
 
 ## Measured performance (RTX 5090, Ryzen 9 9950X3D, 478×850 phone clip)

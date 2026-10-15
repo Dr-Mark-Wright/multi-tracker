@@ -57,6 +57,7 @@ class TrackerSwitcher:
         self._loaded: dict[str, Tracker] = {}
         self._active: Tracker | None = None
         self._prompts: list[str] = []
+        self._warmed: set[str] = set()
         self._lock = threading.Lock()
 
     @property
@@ -80,12 +81,32 @@ class TrackerSwitcher:
             return tracker.prompts
         return []
 
+    @property
+    def accepts_prompts(self) -> bool:
+        """True if the active tracker takes live text prompts."""
+        return isinstance(self._active, PromptableTracker)
+
     def switch(self, name: str) -> None:
         tracker = self._load(name)
         if self._prompts and isinstance(tracker, PromptableTracker):
             tracker.set_prompts(self._prompts)
         with self._lock:
             self._active = tracker
+
+    def warm_up(self, name: str, frame: np.ndarray) -> None:
+        """Load a tracker and run it once, without making it active.
+
+        A GPU model's first frames can take seconds (CUDA start-up), so a
+        UI calls this off its main thread before ``switch`` to keep the
+        current tracker running meanwhile. Only the first call does work.
+        """
+        if name in self._warmed:
+            return
+        tracker = self._load(name)
+        if self._prompts and isinstance(tracker, PromptableTracker):
+            tracker.set_prompts(self._prompts)
+        tracker.process(frame)
+        self._warmed.add(name)
 
     def set_prompts(self, prompts: list[str]) -> None:
         """Remember prompts and pass them to every promptable tracker."""

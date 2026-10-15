@@ -162,3 +162,28 @@ Issues hit and resolved, and the reasoning behind decisions. Newest last.
   request. Both models then completed in two attempts, byte-identical to
   the `curl` copy. Also useful on venue or student Wi-Fi.
 
+
+## 2026-10-15 — Milestone 6: PySide6 UI
+
+- **Layout:** video in the centre, a Controls panel (source, tracker,
+  YOLOE-26 prompts, live status) on the left, and a rotatable 3D skeleton
+  panel (pyqtgraph OpenGL) on the right. Status text now lives in the
+  panel instead of being drawn on the video, which also ends the
+  top-left text overlap. `draw_result(..., inset_3d=False)` drops the
+  corner 3D views for the UI; `track_preview.py` is unchanged.
+- **Threads:** a `QThread` runs capture -> tracker -> overlay and sends
+  finished frames to the window. Opening a source and loading a tracker
+  run on background threads, and each change only goes live once it has
+  worked, so the video never stops for them.
+- **Issue: a 4-5 s freeze on the first frames of a GPU tracker.** CUDA
+  start-up happens on the first inference, not at load. Fixed with
+  `TrackerSwitcher.warm_up`: the new tracker runs once on the latest real
+  frame in the background before `switch` makes it live. Switching now
+  pauses the video for under 0.2 s.
+- **Issue: access violation in `torch.load` when switching to YOLOE-26.**
+  It happened every time after YOLO pose then MediaPipe, with the
+  checkpoint loading on a Qt `QThreadPool` thread. A larger thread stack
+  did not help, and the same sequence on plain Python threads without Qt
+  ran cleanly. Background work now uses `threading.Thread`, with results
+  sent back through Qt signals. Verified: three full tours of all four
+  trackers with no crash.

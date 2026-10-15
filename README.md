@@ -12,6 +12,18 @@ py -3.12 -m venv .venv
 .venv\Scripts\python -m pip install -e .
 ```
 
+## Live demo window (PySide6)
+
+```powershell
+.venv\Scripts\python -m multitracker.ui "media\your-clip.mp4" --tracker YOLOE-26 --prompts "bottle, cup, round coaster"
+```
+
+Pick a webcam, file or stream URL in **Source**, choose a tracker, and type
+YOLOE-26 prompts (comma-separated, Enter to apply). The 3D panel shows
+BodyPose3D skeletons; drag inside it to rotate, drag its edge to resize, or
+float it into its own window. Keys: `T` next tracker, `3` show/hide the 3D
+panel, `F11` full screen.
+
 ## Capture layer check
 
 ```powershell

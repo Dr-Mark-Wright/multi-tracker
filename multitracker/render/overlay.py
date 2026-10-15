@@ -130,8 +130,13 @@ def draw_3d_inset(canvas: np.ndarray, detections: list[Detection]) -> None:
     _draw_view(canvas, detections, (2, 1), side_left, top, size, "side")
 
 
-def draw_result(frame: np.ndarray, result: TrackerResult) -> np.ndarray:
-    """Draw every detection in ``result`` onto a copy of ``frame``."""
+def draw_result(frame: np.ndarray, result: TrackerResult,
+                inset_3d: bool = True) -> np.ndarray:
+    """Draw every detection in ``result`` onto a copy of ``frame``.
+
+    ``inset_3d=False`` leaves out the corner 3D views, for UIs that show
+    3D skeletons in a panel of their own.
+    """
     canvas = frame.copy()
     for detection in result.detections:
         if detection.mask is not None:
@@ -140,7 +145,7 @@ def draw_result(frame: np.ndarray, result: TrackerResult) -> np.ndarray:
         if detection.keypoints is not None:
             draw_keypoints(canvas, detection)
     bodies_3d = [d for d in result.detections if d.keypoints_3d is not None]
-    if bodies_3d:
+    if bodies_3d and inset_3d:
         draw_3d_inset(canvas, bodies_3d)
     return canvas
 
