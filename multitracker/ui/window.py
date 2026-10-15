@@ -15,7 +15,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QAction, QImage, QKeySequence
-from PySide6.QtWidgets import (QComboBox, QDockWidget, QFileDialog,
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QDockWidget, QFileDialog,
                                QFormLayout, QGroupBox, QHBoxLayout, QLabel,
                                QLineEdit, QMainWindow, QPushButton,
                                QVBoxLayout, QWidget)
@@ -158,7 +158,16 @@ class MainWindow(QMainWindow):
             "YOLOE-26 classes, comma-separated. Press Enter to apply.")
         self._prompt_edit.returnPressed.connect(self._apply_prompts)
         layout.addRow("Prompts", self._prompt_edit)
+        self._boxes_check = QCheckBox("Show boxes  (B)")
+        self._boxes_check.setChecked(True)
+        self._boxes_check.setToolTip(
+            "Off: masks and names only, for trackers that produce masks")
+        self._boxes_check.toggled.connect(self._set_show_boxes)
+        layout.addRow("", self._boxes_check)
         return group
+
+    def _set_show_boxes(self, show: bool) -> None:
+        self._pipeline.show_boxes = show
 
     def _status_group(self) -> QGroupBox:
         group = QGroupBox("Status")
@@ -196,6 +205,10 @@ class MainWindow(QMainWindow):
         leave = QAction("Leave full screen", self)
         leave.setShortcut(QKeySequence("Esc"))
         leave.triggered.connect(self.showNormal)
+        boxes = QAction("Toggle boxes", self)
+        boxes.setShortcut(QKeySequence("B"))
+        boxes.triggered.connect(self._boxes_check.toggle)
+        self.addAction(boxes)
         show_3d = self._skeleton_dock.toggleViewAction()
         show_3d.setShortcut(QKeySequence("3"))
         for action in (cycle, full, leave, show_3d):

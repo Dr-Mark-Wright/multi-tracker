@@ -5,7 +5,7 @@ Examples::
     python -m multitracker.ui
     python -m multitracker.ui media/a.mp4 --tracker YOLOE-26 --prompts "bottle, cup"
 
-Keys: T next tracker, 3 shows or hides the 3D panel, F11 full screen,
+Keys: T next tracker, B boxes on/off, 3 shows or hides the 3D panel, F11 full screen,
 Esc leaves full screen. Drag the divider beside a panel to resize it.
 """
 

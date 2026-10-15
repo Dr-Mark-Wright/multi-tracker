@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import zlib
+
 import cv2
 import numpy as np
 
@@ -11,6 +13,10 @@ BOX_COLOUR = (0, 200, 255)
 BONE_COLOUR = (255, 180, 0)
 JOINT_COLOUR = (0, 255, 0)
 MASK_COLOUR = np.array((255, 0, 180), dtype=np.uint8)
+# Distinct BGR colours for masks; each label ("person 3") keeps its colour.
+MASK_PALETTE = ((255, 0, 180), (0, 200, 255), (60, 220, 60), (255, 140, 0),
+                (0, 90, 255), (200, 80, 255), (255, 255, 0), (40, 160, 255),
+                (150, 255, 120), (255, 80, 80))
 TEXT_COLOUR = (255, 255, 255)
 KEYPOINT_MIN_CONFIDENCE = 0.5
 
@@ -73,9 +79,52 @@ def draw_keypoints(frame: np.ndarray, detection: Detection) -> None:
             _draw_joint(frame, point, radius)
 
 
-def draw_mask(frame: np.ndarray, mask: np.ndarray) -> None:
-    """Tint masked pixels in place."""
-    frame[mask] = (frame[mask] * 0.5 + MASK_COLOUR * 0.5).astype(np.uint8)
+def mask_colour(label: str) -> tuple[int, int, int]:
+    """A palette colour chosen from the label, so it is stable over time."""
+    return MASK_PALETTE[zlib.crc32(label.encode()) % len(MASK_PALETTE)]
+
+
+def draw_mask(frame: np.ndarray, mask: np.ndarray,
+              colour=MASK_COLOUR) -> None:
+    """Tint masked pixels and outline the mask, in place."""
+    tint = np.array(colour, dtype=np.uint8)
+    frame[mask] = (frame[mask] * 0.5 + tint * 0.5).astype(np.uint8)
+    contours, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL,
+                                   cv2.CHAIN_APPROX_SIMPLE)
+    cv2.drawContours(frame, contours, -1, tuple(int(c) for c in colour),
+                     _line_width(frame), cv2.LINE_AA)
+
+
+def _area(detection: Detection) -> float:
+    if detection.mask is not None:
+        return float(detection.mask.sum())
+    if detection.box is not None:
+        x1, y1, x2, y2 = detection.box
+        return (x2 - x1) * (y2 - y1)
+    return 0.0
+
+
+def draw_label(frame: np.ndarray, detection: Detection, colour) -> None:
+    """Name an object without a box: above its mask, or its box's corner."""
+    if not detection.label:
+        return
+    if detection.mask is not None and detection.mask.any():
+        rows, cols = np.nonzero(detection.mask)
+        top = rows.min()
+        x, y = int(cols[rows == top].mean()), int(top)
+    elif detection.box is not None:
+        x, y = int(detection.box[0]), int(detection.box[1])
+    else:
+        return
+    width = _line_width(frame)
+    scale = 0.2 * width + 0.3
+    (text_w, _), _ = cv2.getTextSize(detection.label, cv2.FONT_HERSHEY_SIMPLEX,
+                                     scale, width)
+    origin = (max(0, x - text_w // 2), max(15, y - 6))
+    cv2.putText(frame, detection.label, origin, cv2.FONT_HERSHEY_SIMPLEX,
+                scale, (0, 0, 0), width + 2, cv2.LINE_AA)
+    cv2.putText(frame, detection.label, origin, cv2.FONT_HERSHEY_SIMPLEX,
+                scale, colour, width, cv2.LINE_AA)
 
 
 INSET_HALF_METRES = 0.9  # each 3D view shows +-0.9 m around the hips
@@ -131,19 +180,27 @@ def draw_3d_inset(canvas: np.ndarray, detections: list[Detection]) -> None:
 
 
 def draw_result(frame: np.ndarray, result: TrackerResult,
-                inset_3d: bool = True) -> np.ndarray:
+                inset_3d: bool = True, show_boxes: bool = True) -> np.ndarray:
     """Draw every detection in ``result`` onto a copy of ``frame``.
 
     ``inset_3d=False`` leaves out the corner 3D views, for UIs that show
-    3D skeletons in a panel of their own.
+    3D skeletons in a panel of their own. ``show_boxes=False`` draws masks
+    and names only, with each name placed above its mask.
     """
     canvas = frame.copy()
     for detection in result.detections:
+        colour = mask_colour(detection.label)
         if detection.mask is not None:
-            draw_mask(canvas, detection.mask)
-        draw_box(canvas, detection)
+            draw_mask(canvas, detection.mask, colour)
+        if show_boxes:
+            draw_box(canvas, detection)
         if detection.keypoints is not None:
             draw_keypoints(canvas, detection)
+    if not show_boxes:
+        # Largest first, so a small object's name is drawn over a big
+        # neighbour's (the cup's over the table's).
+        for detection in sorted(result.detections, key=_area, reverse=True):
+            draw_label(canvas, detection, mask_colour(detection.label))
     bodies_3d = [d for d in result.detections if d.keypoints_3d is not None]
     if bodies_3d and inset_3d:
         draw_3d_inset(canvas, bodies_3d)
