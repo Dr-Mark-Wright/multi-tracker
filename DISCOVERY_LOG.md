@@ -254,3 +254,18 @@ Issues hit and resolved, and the reasoning behind decisions. Newest last.
 - **Limitation:** YOLO pose guesses legs hidden behind the table with
   fairly high confidence, so MotionBERT draws them; MediaPipe leaves
   hidden legs out. Good comparison for teaching.
+
+## 2026-10-15 — Phone camera over Tailscale, and YOLO objects
+
+- **Issue: eduroam blocks device-to-device traffic.** The phone (IP
+  Webcam Pro, 10.50.3.x) and PC (10.50.29.x) could not reach each other.
+  Tailscale on both fixed it. `tailscale ping` first reported a relay
+  ("DERP", London, ~125 ms), but the stream itself ran at 60 fps,
+  1280x720. Source: `http://<phone-tailscale-ip>:8080/video`.
+- **Note:** an address in 100.64.0.0/10 shown by a phone on mobile data
+  is the carrier's, not reachable; Tailscale addresses use the same range.
+- **YOLO objects tracker:** `yolo26m` (80 COCO classes, no prompts) with
+  Ultralytics' ByteTrack for IDs that persist between frames. ByteTrack
+  needs `lap`, added to requirements because auto-install is disabled.
+  "tv" is shown as "screen". On the phone clip the cup kept ID 1 for all
+  1,145 frames; the bottle got a new ID after being out of view.

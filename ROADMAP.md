@@ -28,6 +28,7 @@ tracker and YOLOE-26 class prompts all change on the fly, with no restarts.
 VideoSource ──frame──▶ TrackerSwitcher ──TrackerResult──▶ renderer ──▶ UI
  (capture/)            (trackers/registry.py)              (render/)
                         ├─ YOLO pose
+                        ├─ YOLO objects (80 classes, ByteTrack IDs)
                         ├─ MediaPipe (hands + face)
                         ├─ YOLOE-26 (live text prompts)
                         ├─ BodyPose3D (MediaPipe 3D)
@@ -90,6 +91,7 @@ demo PC.
 | Tracker | Per frame | Max rate | Runs on |
 |---|---|---|---|
 | YOLO pose (`yolo26s-pose`) | ~5.5 ms | ~180 fps | GPU |
+| YOLO objects (`yolo26m` + ByteTrack) | ~5.4 ms | ~180 fps | GPU |
 | MediaPipe hands | ~7.8 ms | ~130 fps | CPU |
 | MediaPipe face (2 tiles) | ~5.5 ms | ~180 fps | CPU |
 | MediaPipe hands + face | ~13 ms | ~75 fps | CPU |
@@ -102,6 +104,5 @@ demo PC.
 
 ## Future ideas
 
-- Persistent person IDs via Ultralytics' ByteTrack/BoT-SORT.
 - Face ROI tracking: crop around the last known face instead of tiling,
   for better recall on distant faces at lower cost.
