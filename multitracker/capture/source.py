@@ -117,6 +117,24 @@ class VideoSource:
         if old_capture is not None:
             old_capture.release()
 
+    def reopen(self, expected: SourceSpec) -> bool:
+        """Reconnect to ``expected`` unless another source was chosen.
+
+        Used to recover a dropped stream or unplugged webcam. Returns True
+        if the source was reopened; raises ``OSError`` if it is still
+        unavailable. If someone switched to a different source while the
+        reconnect was in progress, the new capture is discarded.
+        """
+        new_capture = _open_capture(expected)
+        with self._lock:
+            if self._spec != expected:
+                new_capture.release()
+                return False
+            old_capture, self._capture = self._capture, new_capture
+        if old_capture is not None:
+            old_capture.release()
+        return True
+
     def read(self) -> tuple[bool, np.ndarray | None]:
         """Return the next frame, or ``(False, None)`` if none is available."""
         with self._lock:

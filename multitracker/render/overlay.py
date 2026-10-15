@@ -150,12 +150,53 @@ def draw_result(frame: np.ndarray, result: TrackerResult,
     return canvas
 
 
+HUD_FONT = cv2.FONT_HERSHEY_SIMPLEX
+BANNER_COLOUR = (0, 220, 255)  # amber, BGR
+HUD_BACKGROUND = np.array((20, 20, 20), dtype=np.uint8)
+
+
 def draw_hud(frame: np.ndarray, lines: list[str]) -> np.ndarray:
-    """Draw status lines in the top-left corner, in place."""
+    """Draw status lines in the top-left corner, in place.
+
+    The text sits on a dark panel sized to fit it, so it stays readable
+    on any background and lines never overwrite each other. Text scales
+    with frame size.
+    """
+    if not lines:
+        return frame
+    scale = max(0.4, min(frame.shape[:2]) / 900)
+    thickness = max(1, round(scale * 1.6))
+    sizes = [cv2.getTextSize(text, HUD_FONT, scale, thickness)[0]
+             for text in lines]
+    line_height = max(h for _, h in sizes) + round(10 * scale)
+    pad = round(8 * scale)
+    width = min(frame.shape[1], max(w for w, _ in sizes) + 2 * pad)
+    height = min(frame.shape[0], len(lines) * line_height + pad)
+    panel = frame[:height, :width]
+    panel[:] = (panel * 0.35 + HUD_BACKGROUND * 0.65).astype(np.uint8)
     for row, text in enumerate(lines):
-        origin = (10, 24 + row * 22)
-        cv2.putText(frame, text, origin, cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                    (0, 0, 0), 3, cv2.LINE_AA)
-        cv2.putText(frame, text, origin, cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                    TEXT_COLOUR, 1, cv2.LINE_AA)
+        origin = (pad, (row + 1) * line_height)
+        cv2.putText(frame, text, origin, HUD_FONT, scale, TEXT_COLOUR,
+                    thickness, cv2.LINE_AA)
+    return frame
+
+
+def draw_banner(frame: np.ndarray, text: str) -> np.ndarray:
+    """Draw a large announcement across the lower third, in place."""
+    if not text:
+        return frame
+    text = text.upper()
+    height, width = frame.shape[:2]
+    scale = 1.0
+    thickness = 2
+    (text_w, text_h), _ = cv2.getTextSize(text, HUD_FONT, scale, thickness)
+    scale *= min(0.9 * width / text_w, height / 14 / text_h)
+    thickness = max(2, round(scale * 2))
+    (text_w, text_h), _ = cv2.getTextSize(text, HUD_FONT, scale, thickness)
+    pad = text_h // 2
+    top = int(height * 0.72)
+    band = frame[top - pad:top + text_h + pad, :]
+    band[:] = (band * 0.3 + HUD_BACKGROUND * 0.7).astype(np.uint8)
+    cv2.putText(frame, text, ((width - text_w) // 2, top + text_h), HUD_FONT,
+                scale, BANNER_COLOUR, thickness, cv2.LINE_AA)
     return frame

@@ -30,7 +30,9 @@ VideoSource ──frame──▶ TrackerSwitcher ──TrackerResult──▶ re
                         ├─ YOLO pose
                         ├─ MediaPipe (hands + face)
                         ├─ YOLOE-26 (live text prompts)
-                        └─ BodyPose3D (MediaPipe 3D; MotionBERT planned)
+                        ├─ BodyPose3D (MediaPipe 3D)
+                        ├─ BodyPose3D MotionBERT (YOLO pose 2D -> 3D)
+                        └─ Cup & bottle (YOLOE-26 + YOLO pose -> behaviour/)
 ```
 
 The UI sends "switch to X" events and reads back frames with overlays. It
@@ -59,9 +61,10 @@ never knows which source or tracker is active.
 | 3 | Tracker-switching interface + MediaPipe | Done 2026-10-09 | `002a02e` |
 | 4 | YOLOE-26 with live text prompts | Done 2026-10-09 | `f5bfb41` |
 | 5a | BodyPose3D: MediaPipe 3D landmarks + 3D views | Done 2026-10-09 | `4fda1b3` |
-| 5b | BodyPose3D: MotionBERT lifter on YOLO pose | Next | |
-| 6 | PySide6 UI (source, tracker, prompt controls, 3D panel) | Done 2026-10-15 | this commit |
-| 7 | Live-demo hardening (dropped streams, missing webcam) | Planned | |
+| 5b | BodyPose3D: MotionBERT lifter on YOLO pose | Done 2026-10-15 | this commit |
+| 6 | PySide6 UI (source, tracker, prompt controls, 3D panel) | Done 2026-10-15 | `878e80d` |
+| 7 | Live-demo hardening (dropped streams, missing webcam) | Done 2026-10-15 | this commit |
+| 7b | Cup & bottle pick-up / put-down analysis | Done 2026-10-15 | this commit |
 | 8 | Browser viewer: watch and control from any device on the network | Planned | |
 
 ## Milestone 8: browser viewer
@@ -94,6 +97,8 @@ demo PC.
 | BodyPose3D, MediaPipe lite | ~11 ms | ~90 fps | CPU |
 | BodyPose3D, MediaPipe full (default) | ~13 ms | ~80 fps | CPU |
 | BodyPose3D, MediaPipe heavy | ~27 ms | ~37 fps | CPU |
+| BodyPose3D MotionBERT (YOLO pose + lite lifter, 81 frames) | ~14 ms | ~70 fps | GPU |
+| Cup & bottle (YOLOE-26 large + YOLO pose + analysis) | ~17 ms | ~60 fps | GPU |
 
 ## Future ideas
 

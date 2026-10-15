@@ -187,3 +187,70 @@ Issues hit and resolved, and the reasoning behind decisions. Newest last.
   ran cleanly. Background work now uses `threading.Thread`, with results
   sent back through Qt signals. Verified: three full tours of all four
   trackers with no crash.
+
+## 2026-10-15 — Cup and bottle analysis
+
+- **Separate module:** `multitracker/behaviour/` works on plain
+  detections, so it is independent of the models. The "Cup & bottle"
+  tracker runs YOLOE-26 (`bottle, cup, round coaster`) and YOLO pose (for
+  the right wrist, COCO keypoint 10) and feeds both to it.
+- **Rules:** an object is *moving* when its centre travels more than 15%
+  of its width over 5 frames. A pick-up is credited to the right hand
+  when the right wrist is within one object width of the box. A put-down
+  is still for 0.3 s with the hand away, or 1 s with the hand still near.
+  All distances are relative to object size, so they scale.
+- **Issue: coasters vanish under objects.** YOLOE cannot see a coaster
+  with a cup on it, so coasters are remembered once seen. A coaster that
+  appears where an object stood was hidden under it, and that object's
+  pick-up event is corrected to name it.
+- **Issue: drinking counted as a put-down.** The cup was held still at
+  mouth height, with the wrist further than one width from the cup
+  (held by the handle). Fixed by only allowing put-downs near the
+  height of the coasters and the objects' starting places.
+- **Result on the phone clip:** all 8 events found and placed correctly
+  (cup moved between coasters 3 and 1, a drink, the bottle lifted out of
+  view and returned).
+- **Text overlap fixed:** status text now sits on a dark box sized to
+  fit it, and events flash up as a large banner for 2 s.
+
+## 2026-10-15 — Milestone 7: live-demo hardening
+
+- **Dropped streams and unplugged webcams:** after 3 failed reads a live
+  source is "lost". The last frame stays on screen, dimmed, with a
+  "signal lost - reconnecting" banner, and the pipeline retries after
+  1 s, doubling to 8 s. `VideoSource.reopen` only swaps in the new
+  capture if nobody chose another source meanwhile.
+- **Verified with a local MJPEG server** (the format phone apps such as
+  IP Webcam send): killing it was noticed in 0.1 s; restarting it
+  reconnected within 0.4 s.
+- **Missing sources fail fast:** absent webcam 0.01 s, missing file
+  0.15 s, dead stream 5 s (the timeout). The current source keeps
+  playing. Not tested: unplugging a webcam mid-run (no webcam attached);
+  it uses the same lost/reconnect path as streams.
+- **Repeating tracker errors** reach the status bar at most every 5 s.
+
+## 2026-10-15 — Milestone 5b: MotionBERT
+
+- **Setup:** YOLO pose gives COCO 2D keypoints, converted to MotionBERT's
+  H36M joints (pelvis, spine, neck and head built from neighbours). The
+  lite in-the-wild checkpoint (`FT_MB_lite_MB_ft_h36m_global_lite`,
+  64 MB, from the author's Hugging Face page) runs on the last 81 frames,
+  and the newest frame's estimate is shown, so there is no added delay.
+  The network code (`DSTformer`) is vendored with its Apache-2.0 licence.
+- **Scale:** output is pelvis-relative and scaled assuming a 0.5 m
+  pelvis-to-neck length, since one camera cannot measure true size.
+- **Compared on the phone clip:**
+
+  | | MediaPipe 3D | MotionBERT |
+  |---|---|---|
+  | Per frame | 12.7 ms | 13.6 ms |
+  | Frames with 3D | 97% | 95% |
+  | Frame-to-frame jitter | 32 mm | 3 mm |
+  | Bone-length variation | 18% | 12% |
+
+  MotionBERT is ten times steadier because it sees the motion over time.
+- **Mirror averaging off:** MotionBERT's script averages with a mirrored
+  pass. Here it changed nothing measurable and cost 7 ms, so it is off.
+- **Limitation:** YOLO pose guesses legs hidden behind the table with
+  fairly high confidence, so MotionBERT draws them; MediaPipe leaves
+  hidden legs out. Good comparison for teaching.

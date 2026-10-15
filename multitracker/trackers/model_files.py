@@ -26,14 +26,15 @@ def _download(url: str, partial: Path) -> bool:
 
 
 def ensure_model(url: str, directory: Path = MODELS_DIR,
-                 attempts: int = 6) -> Path:
+                 attempts: int = 6, filename: str | None = None) -> Path:
     """Return the local path of a model file, downloading it if missing.
 
     Interrupted downloads resume where they stopped: Python downloads of
     larger files from Google's model bucket were seen to cut off at about
-    4 MB every time (see DISCOVERY_LOG.md).
+    4 MB every time (see DISCOVERY_LOG.md). ``filename`` names the local
+    copy when the URL's own name is generic (e.g. ``best_epoch.bin``).
     """
-    path = directory / url.rsplit("/", 1)[-1]
+    path = directory / (filename or url.rsplit("/", 1)[-1])
     if path.exists():
         return path
     directory.mkdir(parents=True, exist_ok=True)

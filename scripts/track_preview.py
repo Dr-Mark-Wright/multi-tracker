@@ -18,7 +18,7 @@ import cv2
 import numpy as np
 
 from multitracker.capture import SourceSpec, VideoSource
-from multitracker.render import draw_hud, draw_result
+from multitracker.render import draw_banner, draw_hud, draw_result
 from multitracker.trackers.registry import TrackerSwitcher
 
 WINDOW = "Multi-Tracker"
@@ -105,7 +105,9 @@ def run(source_text: str, tracker_name: str, prompts: list[str]) -> None:
             result = switcher.process(frame)
             canvas = draw_result(frame, result)
             draw_hud(canvas, hud_lines(switcher, len(result.detections),
-                                       result.inference_ms, meter.tick()))
+                                       result.inference_ms, meter.tick())
+                     + result.status)
+            draw_banner(canvas, result.banner)
             cv2.imshow(WINDOW, canvas)
             key = cv2.waitKey(delay_ms) & 0xFF
             if window_closed(key):

@@ -37,3 +37,7 @@ class TrackerResult:
 
     detections: list[Detection] = field(default_factory=list)
     inference_ms: float = 0.0
+    # Lines for the viewer, e.g. "Cup: on coaster 2". Shown top-left.
+    status: list[str] = field(default_factory=list)
+    # A short announcement shown large for a moment, e.g. "Cup picked up".
+    banner: str = ""

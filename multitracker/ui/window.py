@@ -84,6 +84,12 @@ class MainWindow(QMainWindow):
         self._pipeline = PipelineThread(self._source, self._switcher)
         self._pipeline.frame_ready.connect(self._show_frame)
         self._pipeline.error.connect(self._show_error)
+        self._pipeline.source_lost.connect(
+            lambda name: self.statusBar().showMessage(
+                f"Lost {name}; reconnecting…"))
+        self._pipeline.source_restored.connect(
+            lambda name: self.statusBar().showMessage(
+                f"Reconnected to {name}", MESSAGE_MS))
         self._pipeline.start()
 
         if source_text:
@@ -159,8 +165,9 @@ class MainWindow(QMainWindow):
         layout = QFormLayout(group)
         self._status_labels = {}
         for key in ("Source", "Tracker", "Detections", "Inference",
-                    "Display"):
+                    "Display", "Activity"):
             label = QLabel("–")
+            label.setWordWrap(True)
             label.setTextInteractionFlags(
                 Qt.TextInteractionFlag.TextSelectableByMouse)
             layout.addRow(key, label)
@@ -308,6 +315,7 @@ class MainWindow(QMainWindow):
         labels["Detections"].setText(str(stats.detections))
         labels["Inference"].setText(f"{stats.inference_ms:.1f} ms")
         labels["Display"].setText(f"{stats.fps:.0f} fps")
+        labels["Activity"].setText("\n".join(result.status) or "–")
         if self._skeleton_dock.isVisible():
             self._skeleton.show_skeletons(result.detections)
 
