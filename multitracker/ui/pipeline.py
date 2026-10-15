@@ -92,7 +92,9 @@ class PipelineThread(QThread):
         self._switcher = switcher
         self._meter = FrameRateMeter()
         self.last_frame: np.ndarray | None = None  # for warming up trackers
-        self.show_boxes = True  # set from the UI thread; read once per frame
+        # Set from the UI thread; read once per frame.
+        self.show_boxes = True
+        self.show_masks = True
         self._failures = 0
         self._lost_spec = None
         self._next_retry = 0.0
@@ -191,7 +193,8 @@ class PipelineThread(QThread):
             self.last_frame = frame
             result = self._track(frame)
             canvas = draw_hud(draw_result(frame, result, inset_3d=False,
-                                          show_boxes=self.show_boxes),
+                                          show_boxes=self.show_boxes,
+                                          show_masks=self.show_masks),
                               result.status)
             draw_banner(canvas, result.banner)
             stats = FrameStats(self._switcher.active_name,

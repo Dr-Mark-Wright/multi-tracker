@@ -164,10 +164,19 @@ class MainWindow(QMainWindow):
             "Off: masks and names only, for trackers that produce masks")
         self._boxes_check.toggled.connect(self._set_show_boxes)
         layout.addRow("", self._boxes_check)
+        self._masks_check = QCheckBox("Show masks  (M)")
+        self._masks_check.setChecked(True)
+        self._masks_check.setToolTip(
+            "Coloured object outlines, for trackers that produce masks")
+        self._masks_check.toggled.connect(self._set_show_masks)
+        layout.addRow("", self._masks_check)
         return group
 
     def _set_show_boxes(self, show: bool) -> None:
         self._pipeline.show_boxes = show
+
+    def _set_show_masks(self, show: bool) -> None:
+        self._pipeline.show_masks = show
 
     def _status_group(self) -> QGroupBox:
         group = QGroupBox("Status")
@@ -209,6 +218,10 @@ class MainWindow(QMainWindow):
         boxes.setShortcut(QKeySequence("B"))
         boxes.triggered.connect(self._boxes_check.toggle)
         self.addAction(boxes)
+        masks = QAction("Toggle masks", self)
+        masks.setShortcut(QKeySequence("M"))
+        masks.triggered.connect(self._masks_check.toggle)
+        self.addAction(masks)
         show_3d = self._skeleton_dock.toggleViewAction()
         show_3d.setShortcut(QKeySequence("3"))
         for action in (cycle, full, leave, show_3d):

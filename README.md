@@ -23,7 +23,8 @@ YOLOE-26 prompts (comma-separated, Enter to apply). The 3D panel shows
 BodyPose3D skeletons; drag inside it to rotate, drag its edge to resize, or
 float it into its own window. **Show boxes** (key `B`) switches between
 boxes and masks-only, where each object keeps its own colour and its name
-sits above its mask. Keys: `T` next tracker, `B` boxes, `3` show/hide the
+sits above its mask. **Show masks** (key `M`) turns the mask colours on
+and off. Keys: `T` next tracker, `B` boxes, `M` masks, `3` show/hide the
 3D panel, `F11` full screen.
 
 ### Cup and bottle analysis

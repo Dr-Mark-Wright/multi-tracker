@@ -180,17 +180,19 @@ def draw_3d_inset(canvas: np.ndarray, detections: list[Detection]) -> None:
 
 
 def draw_result(frame: np.ndarray, result: TrackerResult,
-                inset_3d: bool = True, show_boxes: bool = True) -> np.ndarray:
+                inset_3d: bool = True, show_boxes: bool = True,
+                show_masks: bool = True) -> np.ndarray:
     """Draw every detection in ``result`` onto a copy of ``frame``.
 
     ``inset_3d=False`` leaves out the corner 3D views, for UIs that show
-    3D skeletons in a panel of their own. ``show_boxes=False`` draws masks
-    and names only, with each name placed above its mask.
+    3D skeletons in a panel of their own. ``show_boxes=False`` leaves out
+    boxes and places each name above its mask instead (or at its box's
+    corner); ``show_masks=False`` leaves out the mask tint and outline.
     """
     canvas = frame.copy()
     for detection in result.detections:
         colour = mask_colour(detection.label)
-        if detection.mask is not None:
+        if detection.mask is not None and show_masks:
             draw_mask(canvas, detection.mask, colour)
         if show_boxes:
             draw_box(canvas, detection)
